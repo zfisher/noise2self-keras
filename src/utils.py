@@ -1,36 +1,33 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def show_image(pixels):
-    image = (np.reshape(pixels, (28,28))*255).astype(np.uint8)
-    plt.xticks([])
-    plt.yticks([])
-    plt.imshow(image, cmap='gray_r')
-    plt.show()
+def show_image(pixels, title=None):
+    show_grid([[pixels]], [title] if title else None)
 
-def show_images(images_list):
-    fig = plt.figure(figsize=(1,len(images_list)))
-    for i, pixels in enumerate(images_list):
-        fig.add_subplot(1, len(images_list), i+1)
-        image = (np.reshape(pixels, (28,28))*255).astype(np.uint8)
-        plt.xticks([])
-        plt.yticks([])
-        plt.imshow(image, cmap='gray_r')
-    plt.show()
+def show_images(images_list, titles=None):
+    show_grid([images_list], titles)
 
-def show_grid(grid):
+def show_grid(grid, titles=None):
     fig = plt.figure(figsize=(len(grid),len(grid[0])))
     for i, row in enumerate(grid):
         for j, pixels in enumerate(row):
-            fig.add_subplot(len(grid), len(row), len(row)*i + j + 1)
+            ax = fig.add_subplot(len(grid), len(row), len(row)*i + j + 1)
             image = (np.reshape(pixels, (28,28))*255).astype(np.uint8)
+            if titles and j == 0:
+                ax.set_title(titles[i], loc='left')
             plt.xticks([])
             plt.yticks([])
             plt.imshow(image, cmap='gray_r')
     plt.show()
 
-def show_plot(data, *args, **kwargs):
-    plt.plot(data, *args, **kwargs)
+def show_plot(data, title=None, x_label=None, y_label=None):
+    plt.plot(data)
+    if title:
+        plt.title(title)
+    if x_label:
+        plt.xlabel(x_label)
+    if y_label:
+        plt.ylabel(y_label)
     plt.show()
 
 # source: https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console

@@ -1,5 +1,6 @@
-num_batches = 150
+num_batches = 300
 num_examples = 15
+show_loss_plot = True
 
 import numpy as np
 import os
@@ -11,16 +12,19 @@ from tensorflow.contrib.eager.python import tfe
 
 from models import BabyUnet
 from noise import add_gaussian_noise_np, noisy_clean_generator
-from utils import show_grid, display_progress
+from utils import show_grid, show_plot, display_progress
 from masker import Masker, infer
 
 tf.enable_eager_execution()
 
-tf.set_random_seed(0)
-np.random.seed(0)
+tf.set_random_seed(int(time.time()))
+np.random.seed(int(time.time()))
 
-if not os.path.exists('weights/'):
-    os.makedirs('weights/')
+if not os.path.exists('weights/mnist/'):
+    os.makedirs('weights/mnist/')
+
+if not os.path.exists('output/mnist/'):
+    os.makedirs('output/mnist/')
 
 (clean_train, __), (clean_test, __) = mnist.load_data()
 
@@ -29,8 +33,8 @@ clean_train = clean_train.reshape((-1, 28, 28, 1))
 clean_test = clean_test.astype('float32') / 255.
 clean_test = clean_test.reshape((-1, 28, 28, 1))
 
-noisy_train = add_gaussian_noise_np(clean_train, 0.0, 0.5)
-noisy_test  = add_gaussian_noise_np(clean_test, 0.0, 0.5)
+noisy_train = add_gaussian_noise_np(clean_train, 0, 0.4)
+noisy_test  = add_gaussian_noise_np(clean_test, 0, 0.4)
 
 loss_fn = tf.losses.mean_squared_error
 
@@ -51,8 +55,9 @@ with tf.device(device):
     masker = Masker(spacing=3)
     loss_history = []
     
-    noise_gen = noisy_clean_generator(clean_train, 32, 0.0, 0.5)
-    
+    noise_gen = noisy_clean_generator(clean_train, 32, 0, 0.4)
+
+    print()
     start_time = time.time()
     for (batch, (batch_noisy, batch_clean)) in enumerate(noise_gen):
         display_progress(batch, num_batches)
@@ -71,10 +76,14 @@ with tf.device(device):
         optimizer.apply_gradients(zip(grads, model.trainable_variables),
                                   global_step=tf.train.get_or_create_global_step())
     end_time = time.time()
-    print('fit completed in {}s'.format(round(end_time - start_time)))
+    print('fit completed in {}s'.format(round(end_time - start_time, 1)))
+    
+    if show_loss_plot:
+        show_plot(loss_history, 'Loss', 'Epoch', 'Mean Square Error Loss')
+    
     print('validating')
     scores = model.evaluate(noisy_test, clean_test, 32)
-    print("final test loss :", scores)
+    print("final test loss: ", round(scores, 3))
     
     indices = np.random.choice(clean_test.shape[0], num_examples)
     cleans = tf.reshape(clean_test[indices], (num_examples,28,28, 1))
@@ -88,6 +97,10 @@ with tf.device(device):
     infs = infer(noisys64, model, 3)
     infs = tf.reshape(infs,(num_examples, 28, 28))
     infs = np.clip(infs, 0, 1)
-    show_grid([cleans, np.clip(noisys,0,1), preds, np.clip(maskeds,0,1), masks, infs])
+    titles = ['ground truth', 'augmented with gaussian noise',
+              'neural network output', 'masked noisy image', 
+              'J-invariant reconstruction']
+    show_grid([cleans, np.clip(noisys,0,1), preds, np.clip(maskeds,0,1), infs],
+              titles=titles)
     
     model.save_weights('weights/mnist/baby_unet.h5')

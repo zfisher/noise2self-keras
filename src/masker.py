@@ -45,10 +45,10 @@ class Masker:
         return tf.constant(np.ones([shape[0], 1, 1]) * grid, dtype=tf.float32)
     
     def _apply_interpolate_mask(self, x, mask, mask_inv):
-        x_reshaped = x
+        x64 = tf.cast(x, tf.float64)
         kernel = tf.constant(self.interpolate_kernel, dtype=tf.float64)
-        filtered = tf.nn.conv2d(x, kernel, strides=[1,1,1,1], padding='SAME')
-        x_squeezed = tf.dtypes.cast(tf.squeeze(x), dtype=mask.dtype)
+        filtered = tf.nn.conv2d(x64, kernel, strides=[1,1,1,1], padding='SAME')
+        x_squeezed = tf.dtypes.cast(tf.squeeze(x64), dtype=mask.dtype)
         filtered_squeezed = tf.dtypes.cast(tf.squeeze(filtered), dtype=tf.float32)
         term1 = filtered_squeezed * mask
         term2 = x_squeezed  *  mask_inv
