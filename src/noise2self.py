@@ -23,9 +23,6 @@ np.random.seed(int(time.time()))
 if not os.path.exists('weights/mnist/'):
     os.makedirs('weights/mnist/')
 
-if not os.path.exists('output/mnist/'):
-    os.makedirs('output/mnist/')
-
 (clean_train, __), (clean_test, __) = mnist.load_data()
 
 clean_train = clean_train.astype('float32') / 255.
@@ -76,7 +73,7 @@ with tf.device(device):
         optimizer.apply_gradients(zip(grads, model.trainable_variables),
                                   global_step=tf.train.get_or_create_global_step())
     end_time = time.time()
-    print('fit completed in {}s'.format(round(end_time - start_time, 1)))
+    print('fit completed in {:0.2f}s'.format(end_time - start_time))
     
     if show_loss_plot:
         show_plot(loss_history, 'Loss', 'Epoch', 'Mean Square Error Loss')
@@ -85,22 +82,25 @@ with tf.device(device):
     scores = model.evaluate(noisy_test, clean_test, 32)
     print("final test loss: ", round(scores, 3))
     
+    # prepare some example output
     indices = np.random.choice(clean_test.shape[0], num_examples)
     cleans = tf.reshape(clean_test[indices], (num_examples,28,28, 1))
     noisys = tf.reshape(noisy_test[indices], (num_examples, 28, 28, 1))
-    noisys64 = tf.cast(noisys, tf.float64)
     preds = model.predict(noisy_test[indices])
     preds = np.clip(preds, 0, 1)
-    maskeds, masks = masker(noisys64, 0)
+    maskeds, masks = masker(noisys, 0)
     maskeds = tf.reshape(maskeds,(num_examples, 28, 28))
     
-    infs = infer(noisys64, model, 3)
+    infs = infer(noisys, model, 3)
     infs = tf.reshape(infs,(num_examples, 28, 28))
+    
+    # clip the output before pyplot.
     infs = np.clip(infs, 0, 1)
+    maskeds = np.clip(maskeds,0,1)
+    
     titles = ['ground truth', 'augmented with gaussian noise',
               'neural network output', 'masked noisy image', 
               'J-invariant reconstruction']
-    show_grid([cleans, np.clip(noisys,0,1), preds, np.clip(maskeds,0,1), infs],
-              titles=titles)
+    show_grid([cleans, noisys, preds, maskeds, infs], titles=titles)
     
     model.save_weights('weights/mnist/baby_unet.h5')
