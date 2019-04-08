@@ -7,8 +7,14 @@ Reimplements some elements of [the official PyTorch implementation](https://gith
 
 ## Usage
 
-For a demo:
+For a demo (removes Gaussian noise from MNIST):
 
 ```shell
-./run.sh
+python3 noise2self.py
+````
+
+Train on Fashion-MNIST with 500 batches.
+
+```shell
+python3 noise2self.py --dataset fashion-mnist -n 500
 ````
