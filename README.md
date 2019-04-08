@@ -13,7 +13,7 @@ For a demo (removes Gaussian noise from MNIST):
 python3 noise2self.py
 ````
 
-Train on Fashion-MNIST with 500 batches.
+Train on Fashion-MNIST with 500 batches:
 
 ```shell
 python3 noise2self.py --dataset fashion-mnist --num-batches 500
