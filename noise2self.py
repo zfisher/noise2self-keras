@@ -19,7 +19,7 @@ possible_datasets = ['mnist', 'fashion-mnist']
 image_width, image_height = 28, 28
 
 def generate_examples(dataset, num_batches, batch_size, num_examples, 
-                      show_loss_plot, output_path):
+                      show_loss_plot, output_path, verbose):
     assert num_batches > 0, \
         'must have a positive number of batches'
     assert batch_size > 0, \
@@ -55,7 +55,8 @@ def generate_examples(dataset, num_batches, batch_size, num_examples,
     device = '/gpu:0' if tfe.num_gpus() else '/cpu:0'
 
     with tf.device(device):
-        print('building model (device={})'.format(device))
+        if verbose:
+            print('building model (device={})'.format(device))
         model = BabyUnet()
         dummy_x = tf.zeros((1, image_width, image_height, 1))
         model._set_inputs(dummy_x)
@@ -63,13 +64,14 @@ def generate_examples(dataset, num_batches, batch_size, num_examples,
                       loss=tf.keras.losses.mean_squared_error)
         model.build((1, image_width, image_height ,1))
     
-        print('fitting')
         optimizer = tf.train.AdamOptimizer()
         masker = Masker(interpolate=True, spacing=4, radius=1)
         loss_history = []
     
         noise_gen = noisy_clean_generator(clean_train, batch_size, 0, 0.4)
-
+    
+        if verbose:
+            print('fitting model')
         start_time = time.time()
         last_loss = ''
         for (batch, (batch_noisy, batch_clean)) in enumerate(noise_gen):
@@ -91,12 +93,15 @@ def generate_examples(dataset, num_batches, batch_size, num_examples,
             optimizer.apply_gradients(zip(grads, model.trainable_variables),
                                       global_step=tf.train.get_or_create_global_step())
         end_time = time.time()
-        print('fit completed in {:0.2f}s'.format(end_time - start_time))
+        if verbose:
+            print('fit completed in {:0.2f}s'.format(end_time - start_time))
     
         if show_loss_plot:
             show_plot(loss_history, 'Loss', 'Epoch', 'Mean Square Error Loss')
-    
-        print('validating')
+        
+        if verbose:
+            print('validating')
+
         scores = model.evaluate(noisy_test, clean_test, 32)
         print("final test loss: {:0.3f}".format(scores))
     
@@ -132,6 +137,8 @@ if __name__ == '__main__':
                         default=15, help='number of examples to plot')
     parser.add_argument('--show-loss-plot', dest='show_loss', 
                         action='store_true', help='display a plot with losses')
+    parser.add_argument('-v', '--verbose', dest='verbose', 
+                        action='store_true', help='verbose mode')
     parser.add_argument('--output-path', dest='output_path', type=str, 
                         default='weights/baby_unet.h5', 
                         help='path to output the weights file (in hdf5 format)')
@@ -139,4 +146,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     generate_examples(args.dataset, args.num_batches, args.batch_size, 
-                      args.num_examples, args.show_loss, args.output_path)
+                      args.num_examples, args.show_loss, args.output_path, 
+                      args.verbose)
