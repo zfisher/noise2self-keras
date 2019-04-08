@@ -1,1 +1,0 @@
-python3 -i ./src/noise2self.py

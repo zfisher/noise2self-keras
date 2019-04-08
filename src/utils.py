@@ -1,18 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def show_image(pixels, title=None):
-    show_grid([[pixels]], [title] if title else None)
+def show_image(pixels, title=None, clip=True):
+    show_grid([[pixels]], [title] if title else None, clip)
 
-def show_images(images_list, titles=None):
-    show_grid([images_list], titles)
+def show_images(images_list, titles=None, clip=True):
+    show_grid([images_list], titles, clip)
 
-def show_grid(grid, titles=None):
+def show_grid(grid, titles=None, clip=True):
     fig = plt.figure(figsize=(len(grid),len(grid[0])))
     for i, row in enumerate(grid):
         for j, pixels in enumerate(row):
             ax = fig.add_subplot(len(grid), len(row), len(row)*i + j + 1)
-            image = (np.reshape(pixels, (28,28))*255).astype(np.uint8)
+            image = np.squeeze(pixels)
+            if clip:
+                image = np.clip(image, 0, 1)
             if titles and j == 0:
                 ax.set_title(titles[i], loc='left')
             plt.xticks([])
@@ -30,8 +32,9 @@ def show_plot(data, title=None, x_label=None, y_label=None):
         plt.ylabel(y_label)
     plt.show()
 
-# source: https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console
-def display_progress (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█'):
+# adapted from: https://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console
+def display_progress(iteration, total, prefix = '', suffix = '', 
+                     decimals = 1, length = 100, fill = '█'):
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)
     bar = fill * filled_length + '-' * (length - filled_length)
