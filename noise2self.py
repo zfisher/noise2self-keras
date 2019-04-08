@@ -33,9 +33,9 @@ def generate_examples(dataset, num_batches, batch_size, num_examples,
 
     tf.set_random_seed(int(time.time()))
     np.random.seed(int(time.time()))
-
-    if not os.path.exists('weights/mnist/'):
-        os.makedirs('weights/mnist/')
+    
+    if not os.path.exists(os.path.dirname(output_path)):
+        os.makedirs(os.path.dirname(output_path))
 
     if dataset == 'mnist':
         (clean_train, __), (clean_test, __) = mnist.load_data()
