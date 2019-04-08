@@ -109,9 +109,8 @@ def generate_examples(dataset, num_batches, num_examples, show_loss_plot, output
         infs = infer(noisys, model, spacing=4)
     
         titles = ['ground truth', 'augmented with gaussian noise',
-                  'neural network output', 'masked noisy image', 
-                  'J-invariant reconstruction']
-        show_grid([cleans, noisys, preds, maskeds, infs], titles=titles)
+                  'neural network output', 'J-invariant reconstruction']
+        show_grid([cleans, noisys, preds, infs], titles=titles)
     
         model.save_weights(output_path)
 
