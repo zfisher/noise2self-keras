@@ -18,8 +18,11 @@ from masker import Masker, infer
 possible_datasets = ['mnist', 'fashion-mnist']
 image_width, image_height = 28, 28
 
-def generate_examples(dataset, num_batches, num_examples, show_loss_plot, output_path):
+def generate_examples(dataset, num_batches, batch_size, num_examples, 
+                      show_loss_plot, output_path):
     assert num_batches > 0, \
+        'must have a positive number of batches'
+    assert batch_size > 0, \
         'must have a positive batch size'
     assert num_examples > 0, \
         'must have a positive number of examples'
@@ -65,7 +68,7 @@ def generate_examples(dataset, num_batches, num_examples, show_loss_plot, output
         masker = Masker(interpolate=True, spacing=4, radius=1)
         loss_history = []
     
-        noise_gen = noisy_clean_generator(clean_train, 32, 0, 0.4)
+        noise_gen = noisy_clean_generator(clean_train, batch_size, 0, 0.4)
 
         start_time = time.time()
         last_loss = ''
@@ -121,8 +124,10 @@ if __name__ == '__main__':
     
     parser.add_argument('--dataset', dest='dataset', type=str, default='mnist',
                         help='either mnist or fashion-mnist')
-    parser.add_argument('-n', '--num-batches', dest='num_batches', type=int,
+    parser.add_argument('--num-batches', dest='num_batches', type=int,
                         default=150, help='number of batches')
+    parser.add_argument('--batch-size', dest='batch_size', type=int,
+                        default=32, help='batch size')
     parser.add_argument('--num-examples', dest='num_examples', type=int,
                         default=15, help='number of examples to plot')
     parser.add_argument('--show-loss-plot', dest='show_loss', 
@@ -133,5 +138,5 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     
-    generate_examples(args.dataset, args. num_batches, args.num_examples, 
-                      args.show_loss, args.output_path)
+    generate_examples(args.dataset, args.num_batches, args.batch_size, 
+                      args.num_examples, args.show_loss, args.output_path)
