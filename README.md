@@ -16,5 +16,5 @@ python3 noise2self.py
 Train on Fashion-MNIST with 500 batches.
 
 ```shell
-python3 noise2self.py --dataset fashion-mnist -n 500
+python3 noise2self.py --dataset fashion-mnist --num-batches 500
 ````
