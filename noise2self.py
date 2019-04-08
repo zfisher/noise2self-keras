@@ -8,7 +8,7 @@ import tensorflow as tf
 from tensorflow.python.keras.datasets import mnist, fashion_mnist
 from tensorflow.contrib.eager.python import tfe
 
-sys.path.append(os.path.join(sys.path[0], 'src'))
+sys.path.insert(0, os.path.join(sys.path[0], 'src'))
 
 from models import BabyUnet
 from noise import add_gaussian_noise_np, noisy_clean_generator
@@ -122,7 +122,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--dataset', dest='dataset', type=str, default='mnist',
                         help='either mnist or fashion-mnist')
-    parser.add_argument('--num-batches', dest='num_batches', type=int,
+    parser.add_argument('-n', '--num-batches', dest='num_batches', type=int,
                         default=150, help='number of batches')
     parser.add_argument('--num-examples', dest='num_examples', type=int,
                         default=15, help='number of examples to plot')
