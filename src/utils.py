@@ -8,7 +8,7 @@ def show_images(images_list, titles=None, clip=True):
     show_grid([images_list], titles, clip)
 
 def show_grid(grid, titles=None, clip=True):
-    fig = plt.figure(figsize=(len(grid),len(grid[0])))
+    fig = plt.figure(figsize=(len(grid[0]), len(grid)))
     for i, row in enumerate(grid):
         for j, pixels in enumerate(row):
             ax = fig.add_subplot(len(grid), len(row), len(row)*i + j + 1)
@@ -20,6 +20,9 @@ def show_grid(grid, titles=None, clip=True):
             plt.xticks([])
             plt.yticks([])
             plt.imshow(image, cmap='gray_r')
+    
+    if titles:
+        plt.subplots_adjust(hspace=0.5)
     plt.show()
 
 def show_plot(data, title=None, x_label=None, y_label=None):
