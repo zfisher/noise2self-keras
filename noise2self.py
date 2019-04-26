@@ -18,8 +18,25 @@ from masker import Masker, infer
 possible_datasets = ['mnist', 'fashion-mnist']
 image_width, image_height = 28, 28
 
-def generate_examples(dataset, num_batches, batch_size, num_examples, 
-                      show_loss_plot, output_path, verbose):
+def generate_examples(dataset = 'mnist', num_batches = 150, batch_size = 32, 
+                      num_examples = 15, show_loss_plot = False, 
+                      output_path = None, verbose = False):
+                      
+    """ Trains a UNet to demonstrate denoising by self-supervision (noise2self).
+    Uses matplotlib to display the results.
+    
+    Args:
+        dataset (string): one of the possible_datasets defined above
+        num_batches (int): number of batches used for training
+        batch_size (int): number of images in each batch
+        num_examples (int): number of examples to display in matplotlib
+        show_loss_plot (bool): whether to display a graph of loss after training
+        output_path (string): path to output weights, or None for no output
+    
+    Returns:
+        None. (Output is sent to matplotlib directly.)
+    """
+    
     assert num_batches > 0, \
         'must have a positive number of batches'
     assert batch_size > 0, \
@@ -31,11 +48,8 @@ def generate_examples(dataset, num_batches, batch_size, num_examples,
     
     tf.enable_eager_execution()
 
-    tf.set_random_seed(int(time.time()))
-    np.random.seed(int(time.time()))
-    
-    if not os.path.exists(os.path.dirname(output_path)):
-        os.makedirs(os.path.dirname(output_path))
+    tf.set_random_seed(1337)
+    np.random.seed(1337)
 
     if dataset == 'mnist':
         (clean_train, __), (clean_test, __) = mnist.load_data()
@@ -73,10 +87,13 @@ def generate_examples(dataset, num_batches, batch_size, num_examples,
         if verbose:
             print('fitting model')
         start_time = time.time()
-        last_loss = ''
+        loss_display = ''
+        
         for (batch, (batch_noisy, batch_clean)) in enumerate(noise_gen):
-            display_progress(batch, num_batches, length=30, suffix=last_loss,
-                             prefix='{}/{}'.format(batch, num_batches).rjust(10))
+            fraction_display = '{}/{}'.format(batch, num_batches).rjust(10)
+            display_progress(batch, num_batches, length=30, suffix=loss_display,
+                             prefix=fraction_display)
+            
             if batch == num_batches:
                 break
         
@@ -87,11 +104,12 @@ def generate_examples(dataset, num_batches, batch_size, num_examples,
                 batch_predictions = model(tf.cast(masked, tf.float32))
                 loss_value = loss_fn(mask * batch_clean, mask * batch_predictions)
         
-            last_loss = '(loss: {:0.5f})'.format(loss_value.numpy())
+            loss_display = '(loss: {:0.5f})'.format(loss_value.numpy())
             loss_history.append(loss_value.numpy())
             grads = tape.gradient(loss_value, model.trainable_variables)
             optimizer.apply_gradients(zip(grads, model.trainable_variables),
                                       global_step=tf.train.get_or_create_global_step())
+        
         end_time = time.time()
         if verbose:
             print('fit completed in {:0.2f}s'.format(end_time - start_time))
@@ -109,18 +127,22 @@ def generate_examples(dataset, num_batches, batch_size, num_examples,
         indices = np.random.choice(clean_test.shape[0], num_examples)
         cleans = tf.reshape(clean_test[indices], data_shape)
         noisys = tf.reshape(noisy_test[indices], data_shape)
-        preds = model.predict(noisy_test[indices])
+        predictions = model.predict(noisy_test[indices])
     
         maskeds, masks = masker(noisys, 0)
         maskeds = tf.reshape(maskeds, (num_examples, image_width, image_height))
     
-        infs = infer(noisys, model, spacing=4)
+        inferences = infer(noisys, model, spacing=4)
     
         titles = ['ground truth', 'augmented with gaussian noise',
                   'neural network output', 'J-invariant reconstruction']
-        show_grid([cleans, noisys, preds, infs], titles=titles)
-    
-        model.save_weights(output_path)
+        show_grid([cleans, noisys, predictions, inferences], titles=titles)
+        
+        if output_path:
+            if not os.path.exists(os.path.dirname(output_path)):
+                os.makedirs(os.path.dirname(output_path))
+            
+            model.save_weights(output_path)
 
 if __name__ == '__main__':
     program_desc = 'Generate some examples of denoising via self-supervision'\
@@ -137,11 +159,11 @@ if __name__ == '__main__':
                         default=15, help='number of examples to plot')
     parser.add_argument('--show-loss-plot', dest='show_loss', 
                         action='store_true', help='display a plot with losses')
+    parser.add_argument('--output-path', dest='output_path', type=str, 
+                        default=None, 
+                        help='path to output the weights file (in hdf5 format)')
     parser.add_argument('-v', '--verbose', dest='verbose', 
                         action='store_true', help='verbose mode')
-    parser.add_argument('--output-path', dest='output_path', type=str, 
-                        default='weights/baby_unet.h5', 
-                        help='path to output the weights file (in hdf5 format)')
     
     args = parser.parse_args()
     
