@@ -73,8 +73,6 @@ def generate_examples(dataset = 'mnist', num_batches = 150, batch_size = 32,
         if verbose:
             print('building model (device={})'.format(device))
         model = BabyUnet()
-        dummy_x = tf.zeros((1, image_width, image_height, 1))
-        model._set_inputs(dummy_x)
         model.compile(optimizer=tf.train.AdamOptimizer(0.001),
                       loss=tf.keras.losses.mean_squared_error)
         model.build((1, image_width, image_height ,1))
@@ -101,7 +99,7 @@ def generate_examples(dataset = 'mnist', num_batches = 150, batch_size = 32,
             with tf.GradientTape() as tape:
                 masked, mask = masker(batch_noisy, batch)
                 masked = tf.reshape(masked, data_shape)
-                mask   = tf.reshape(mask,   data_shape)
+                mask = tf.reshape(mask, data_shape)
                 batch_predictions = model(tf.cast(masked, tf.float32))
                 loss_value = loss_fn(mask * batch_clean, mask * batch_predictions)
         
