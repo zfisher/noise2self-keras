@@ -32,6 +32,7 @@ def generate_examples(dataset = 'mnist', num_batches = 150, batch_size = 32,
         num_examples (int): number of examples to display in matplotlib
         show_loss_plot (bool): whether to display a graph of loss after training
         output_path (string): path to output weights, or None for no output
+        verbose (bool): print extra information during building and training
     
     Returns:
         None. (Output is sent to matplotlib directly.)
