@@ -45,14 +45,15 @@ def get_data(dataset):
     return clean_train, clean_test, noisy_test
 
 
-def train_model(clean_train, clean_test, num_batches=150, batch_size=32, 
-                show_loss_plot=False, verbose=False, seed=1337):
+def train_model(clean_train, clean_test, noisy_test, num_batches=150, 
+                batch_size=32, show_loss_plot=False, verbose=False, seed=1337):
     """ Trains a UNet to demonstrate denoising by self-supervision (noise2self).
     Uses matplotlib to display the results.
 
     Args:
         clean_train (tensor): the clean training data
         clean_test (tensor): the clean testing data
+        clean_test (tensor): the noisy testing data
         num_batches (int): number of batches used for training
         batch_size (int): number of images in each batch
         show_loss_plot (bool): display a graph of loss after training
@@ -196,11 +197,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     clean_train, clean_test, noisy_test = get_data(args.dataset)
-    model = train_model(clean_train, clean_test, args.num_batches, 
+    model = train_model(clean_train, clean_test, noisy_test, args.num_batches, 
                         args.batch_size, args.show_loss, args.verbose)
     
     if args.num_examples:
-        plot_examples(model, clean_test, noisy_test,  args.num_examples, 
+        plot_examples(model, clean_test, noisy_test, args.num_examples, 
                       args.example_output_path)
     
     if args.weight_output_path:
