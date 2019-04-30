@@ -15,60 +15,69 @@ from src.masker import Masker, infer
 possible_datasets = ['mnist', 'fashion-mnist']
 image_width, image_height = 28, 28
 
-def generate_examples(dataset = 'mnist', num_batches = 150, batch_size = 32, 
-                      num_examples = 15, show_loss_plot = False, 
-                      output_path = None, verbose = False):
-                      
-    """ Trains a UNet to demonstrate denoising by self-supervision (noise2self).
-    Uses matplotlib to display the results.
+data_shape = (-1, image_width, image_height, 1)
+
+def get_data(dataset):
+    """ Prepare the mnist or fashion-mnist data to feed to the model.
     
     Args:
-        dataset (string): one of the possible_datasets defined above
-        num_batches (int): number of batches used for training
-        batch_size (int): number of images in each batch
-        num_examples (int): number of examples to display in matplotlib
-        show_loss_plot (bool): whether to display a graph of loss after training
-        output_path (string): path to output weights, or None for no output
-        verbose (bool): print extra information during building and training
+        dataset (string): one of the possible_datasets
     
     Returns:
-        None. (Output is sent to matplotlib directly.)
+        A tuple with the clean training data, clean testing data, and noisy
+        testing data.
     """
     
-    assert num_batches > 0, \
-        'must have a positive number of batches'
-    assert batch_size > 0, \
-        'must have a positive batch size'
-    assert num_examples > 0, \
-        'must have a positive number of examples'
     assert dataset in possible_datasets, \
         'dataset must be one of: {}'.format(', '.join(possible_datasets))
     
-    tf.enable_eager_execution()
-
-    tf.set_random_seed(1337)
-    np.random.seed(1337)
-
     if dataset == 'mnist':
         (clean_train, __), (clean_test, __) = mnist.load_data()
     elif dataset == 'fashion-mnist':
         (clean_train, __), (clean_test, __) = fashion_mnist.load_data()
 
-    data_shape = (-1, image_width, image_height, 1)
     clean_train = clean_train.astype('float32') / 255.
     clean_train = clean_train.reshape(data_shape)
     clean_test = clean_test.astype('float32') / 255.
     clean_test = clean_test.reshape(data_shape)
 
     noisy_test  = add_gaussian_noise_np(clean_test, 0.0, 0.4)
+    return clean_train, clean_test, noisy_test
 
+
+def train_model(clean_train, clean_test, num_batches=150, batch_size=32, 
+                show_loss_plot=False, verbose=False, seed=1337):
+    """ Trains a UNet to demonstrate denoising by self-supervision (noise2self).
+    Uses matplotlib to display the results.
+
+    Args:
+        clean_train (tensor): the clean training data
+        clean_test (tensor): the clean testing data
+        num_batches (int): number of batches used for training
+        batch_size (int): number of images in each batch
+        show_loss_plot (bool): display a graph of loss after training
+        verbose (bool): print extra information
+
+    Returns:
+        The trained tensorflow model.
+    """
+    
+    assert num_batches > 0, 'must have a positive number of batches'
+    assert batch_size > 0, 'must have a positive batch size'
+    
+    def verbose_print(s):
+        if verbose:
+            print(s)
+    
+    tf.enable_eager_execution()
+    tf.set_random_seed(seed)
+    np.random.seed(seed)
+    
     loss_fn = tf.losses.mean_squared_error
-
     device = '/gpu:0' if tfe.num_gpus() else '/cpu:0'
 
     with tf.device(device):
-        if verbose:
-            print('building model (device={})'.format(device))
+        verbose_print('building model (device={})'.format(device))
         model = BabyUnet()
         model.compile(optimizer=tf.train.AdamOptimizer(0.001),
                       loss=tf.keras.losses.mean_squared_error)
@@ -80,11 +89,9 @@ def generate_examples(dataset = 'mnist', num_batches = 150, batch_size = 32,
     
         noise_gen = noisy_clean_generator(clean_train, batch_size, 0, 0.4)
     
-        if verbose:
-            print('fitting model')
+        verbose_print('fitting model')
         start_time = time.time()
         loss_display = ''
-        
         for (batch, (batch_noisy, batch_clean)) in enumerate(noise_gen):
             fraction_display = '{}/{}'.format(batch, num_batches).rjust(10)
             display_progress(batch, num_batches, length=30, suffix=loss_display,
@@ -94,9 +101,7 @@ def generate_examples(dataset = 'mnist', num_batches = 150, batch_size = 32,
                 break
         
             with tf.GradientTape() as tape:
-                masked, mask = masker(batch_noisy, batch)
-                masked = tf.reshape(masked, data_shape)
-                mask = tf.reshape(mask, data_shape)
+                masked, mask = masker(batch_noisy, batch, shape=data_shape)
                 batch_predictions = model(tf.cast(masked, tf.float32))
                 loss_value = loss_fn(mask * batch_clean, mask * batch_predictions)
         
@@ -107,38 +112,62 @@ def generate_examples(dataset = 'mnist', num_batches = 150, batch_size = 32,
                                       global_step=tf.train.get_or_create_global_step())
         
         end_time = time.time()
-        if verbose:
-            print('fit completed in {:0.2f}s'.format(end_time - start_time))
+        verbose_print('fit completed in {:0.2f}s'.format(end_time - start_time))
     
         if show_loss_plot:
             show_plot(loss_history, 'Loss', 'Epoch', 'Mean Square Error Loss')
         
-        if verbose:
-            print('validating')
-
+        verbose_print('validating')
         scores = model.evaluate(noisy_test, clean_test, 32)
         print("final test loss: {:0.3f}".format(scores))
     
-        # prepare some example output
-        indices = np.random.choice(clean_test.shape[0], num_examples)
-        cleans = tf.reshape(clean_test[indices], data_shape)
-        noisys = tf.reshape(noisy_test[indices], data_shape)
-        predictions = model.predict(noisy_test[indices])
+    return model
+
+def save_model_weights(model, output_path):
+    """ Saves the weights of model to output_path.
+    """
+    output_dir = os.path.dirname(output_path)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     
-        maskeds, masks = masker(noisys, 0)
-        maskeds = tf.reshape(maskeds, (num_examples, image_width, image_height))
+    model.save_weights(output_path)
+
+def generate_examples(model, clean_test, noisy_test, num_examples=15, 
+                      output_path=None):
+    """ Generates a set of examples from the trained model.
     
-        inferences = infer(noisys, model, spacing=4)
+    Args:
+        model (tensorflow model): the trained model
+        clean_test (tensor): the clean testing data
+        noisy_test (tensor): the noisy testing data
+        num_examples (int): how many examples to show in pyplot
+        output_path (string): path to output figure, or None for standard
+
+    Returns:
+        None.
     
-        titles = ['ground truth', 'augmented with gaussian noise',
-                  'neural network output', 'J-invariant reconstruction']
-        show_grid([cleans, noisys, predictions, inferences], titles=titles)
-        
-        if output_path:
-            if not os.path.exists(os.path.dirname(output_path)):
-                os.makedirs(os.path.dirname(output_path))
-            
-            model.save_weights(output_path)
+    """
+    
+    assert num_examples > 0, \
+        'must have a positive number of examples'
+    
+    indices = np.random.choice(clean_test.shape[0], num_examples)
+    cleans = tf.reshape(clean_test[indices], data_shape)
+    noisys = tf.reshape(noisy_test[indices], data_shape)
+    predictions = model.predict(noisy_test[indices])
+    
+
+    masker = Masker(interpolate=True, spacing=4, radius=1)
+    examples_shape = (num_examples, image_width, image_height)
+    maskeds, masks = masker(noisys, 0, shape=examples_shape)
+
+    inferences = infer(noisys, model, spacing=4)
+
+    titles = ['ground truth', 'augmented with gaussian noise',
+              'neural network output', 'J-invariant reconstruction']
+    show_grid([cleans, noisys, predictions, inferences], titles=titles,
+              output_path=output_path)
+
 
 if __name__ == '__main__':
     program_desc = 'Generate some examples of denoising via self-supervision'\
@@ -155,14 +184,24 @@ if __name__ == '__main__':
                         default=15, help='number of examples to plot')
     parser.add_argument('--show-loss-plot', dest='show_loss', 
                         action='store_true', help='display a plot with losses')
-    parser.add_argument('--output-path', dest='output_path', type=str, 
+    parser.add_argument('--weight-output-path', dest='weight_output_path', type=str, 
                         default=None, 
                         help='path to output the weights file (in hdf5 format)')
+    parser.add_argument('--example-output-path', dest='example_output_path', type=str, 
+                        default=None, 
+                        help='path to output example figure')
     parser.add_argument('-v', '--verbose', dest='verbose', 
                         action='store_true', help='verbose mode')
     
     args = parser.parse_args()
     
-    generate_examples(args.dataset, args.num_batches, args.batch_size, 
-                      args.num_examples, args.show_loss, args.output_path, 
-                      args.verbose)
+    clean_train, clean_test, noisy_test = get_data(args.dataset)
+    model = train_model(clean_train, clean_test, args.num_batches, 
+                        args.batch_size, args.show_loss, args.verbose)
+    
+    if args.num_examples:
+        generate_examples(model, clean_test, noisy_test, 
+                          args.num_examples, args.example_output_path)
+    
+    if args.weight_output_path:
+        save_model_weights(model, args.weight_output_path)

@@ -31,7 +31,7 @@ class Masker:
         kernel /= kernel.sum()
         self.interpolate_kernel = kernel[:, :, np.newaxis, np.newaxis]
     
-    def __call__(self, x, i=0):
+    def __call__(self, x, i=0, shape=None):
         phase_x = i % self.spacing
         phase_y = (i // self.spacing) % self.spacing
     
@@ -42,6 +42,10 @@ class Masker:
             masked = self._apply_interpolate_mask(x, mask, mask_inv)
         else:
             masked = x * tf.cast(tf.reshape(mask_inv, x.shape), x.dtype)
+        
+        if shape:
+            masked = tf.reshape(masked, shape)
+            mask = tf.reshape(mask, shape)
     
         return masked, mask
     

@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def show_image(pixels, title=None, clip=True):
-    show_grid([[pixels]], [title] if title else None, clip)
+def show_image(pixels, title=None, clip=True, output_path=None):
+    show_grid([[pixels]], [title] if title else None, clip, output_path)
 
-def show_images(images_list, titles=None, clip=True):
-    show_grid([images_list], titles, clip)
+def show_images(images_list, titles=None, clip=True, output_path=None):
+    show_grid([images_list], titles, clip, output_path)
 
-def show_grid(grid, titles=None, clip=True):
+def show_grid(grid, titles=None, clip=True, output_path=None):
     fig = plt.figure(figsize=(len(grid[0]), len(grid)))
     for i, row in enumerate(grid):
         for j, pixels in enumerate(row):
@@ -23,7 +23,11 @@ def show_grid(grid, titles=None, clip=True):
     
     if titles:
         plt.subplots_adjust(hspace=0.5)
-    plt.show()
+    
+    if not output_path:
+        plt.show()
+    else:
+        plt.savefig(output_path)
 
 def show_plot(data, title=None, x_label=None, y_label=None):
     plt.plot(data)
