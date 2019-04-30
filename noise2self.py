@@ -132,8 +132,8 @@ def save_model_weights(model, output_path):
     
     model.save_weights(output_path)
 
-def generate_examples(model, clean_test, noisy_test, num_examples=15, 
-                      output_path=None):
+def plot_examples(model, clean_test, noisy_test, num_examples=15, 
+                  output_path=None):
     """ Generates a set of examples from the trained model.
     
     Args:
@@ -200,8 +200,8 @@ if __name__ == '__main__':
                         args.batch_size, args.show_loss, args.verbose)
     
     if args.num_examples:
-        generate_examples(model, clean_test, noisy_test, 
-                          args.num_examples, args.example_output_path)
+        plot_examples(model, clean_test, noisy_test,  args.num_examples, 
+                      args.example_output_path)
     
     if args.weight_output_path:
         save_model_weights(model, args.weight_output_path)
