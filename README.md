@@ -3,7 +3,7 @@ A simple implementation of [noise2self](https://arxiv.org/abs/1901.11365), using
 
 Reimplements some elements of [the official PyTorch implementation](https://github.com/czbiohub/noise2self). 
 
-![An example of training noise2self on MNIST augmented with gaussian noise, after 150 epochs ](https://raw.githubusercontent.com/zfisher/noise2self-keras/master/images/mnist.png)
+![An example of training noise2self on fashion-MNIST augmented with gaussian noise, after 16384 epochs ](https://raw.githubusercontent.com/zfisher/noise2self-keras/master/images/fashion-mnist.png)
 
 ## Usage
 
