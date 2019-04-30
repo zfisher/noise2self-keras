@@ -7,7 +7,9 @@ Reimplements some elements of [the official PyTorch implementation](https://gith
 
 ## Usage
 
-For a demo (removes Gaussian noise from MNIST):
+[Run a demo on Google Colab here.](https://drive.google.com/open?id=1jd5CBck3zuPfZ4HJP57LVWPyDL2H79C3)
+
+To generate a basic example (removes Gaussian noise from MNIST):
 
 ```shell
 python3 noise2self.py
