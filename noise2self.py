@@ -134,7 +134,7 @@ def save_model_weights(model, output_path):
     model.save_weights(output_path)
 
 def plot_examples(model, clean_test, noisy_test, num_examples=15, 
-                  output_path=None):
+                  randomize=False, output_path=None):
     """ Generates a set of examples from the trained model.
     
     Args:
@@ -142,6 +142,7 @@ def plot_examples(model, clean_test, noisy_test, num_examples=15,
         clean_test (tensor): the clean testing data
         noisy_test (tensor): the noisy testing data
         num_examples (int): how many examples to show in pyplot
+        randomize (bool): if False, use the first num_examples images
         output_path (string): path to output figure, or None for standard
 
     Returns:
@@ -152,7 +153,11 @@ def plot_examples(model, clean_test, noisy_test, num_examples=15,
     assert num_examples > 0, \
         'must have a positive number of examples'
     
-    indices = np.random.choice(clean_test.shape[0], num_examples)
+    if randomize:
+        indices = np.random.choice(clean_test.shape[0], num_examples)
+    else:
+        indices = list(range(num_examples))
+    
     cleans = tf.reshape(clean_test[indices], data_shape)
     noisys = tf.reshape(noisy_test[indices], data_shape)
     predictions = model.predict(noisy_test[indices])
