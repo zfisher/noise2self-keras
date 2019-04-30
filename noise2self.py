@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import sys
 import time
 import argparse
 
@@ -8,12 +7,10 @@ import tensorflow as tf
 from tensorflow.python.keras.datasets import mnist, fashion_mnist
 from tensorflow.contrib.eager.python import tfe
 
-sys.path.insert(0, os.path.join(sys.path[0], 'src'))
-
-from models import BabyUnet
-from noise import add_gaussian_noise_np, noisy_clean_generator
-from utils import show_grid, show_plot, display_progress
-from masker import Masker, infer
+from src.models import BabyUnet
+from src.noise import add_gaussian_noise_np, noisy_clean_generator
+from src.utils import show_grid, show_plot, display_progress
+from src.masker import Masker, infer
 
 possible_datasets = ['mnist', 'fashion-mnist']
 image_width, image_height = 28, 28
