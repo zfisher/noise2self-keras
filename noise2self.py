@@ -28,8 +28,9 @@ def get_data(dataset):
         testing data.
     """
     
-    assert dataset in possible_datasets, \
-        'dataset must be one of: {}'.format(', '.join(possible_datasets))
+    if dataset not in possible_datasets:
+        datasets_output = ', '.join(possible_datasets)
+        raise ValueError('dataset must be one of: {}'.format(datasets_output))
     
     if dataset == 'mnist':
         (clean_train, __), (clean_test, __) = mnist.load_data()
@@ -63,8 +64,10 @@ def train_model(clean_train, clean_test, noisy_test, num_batches=150,
         The trained tensorflow model.
     """
     
-    assert num_batches > 0, 'must have a positive number of batches'
-    assert batch_size > 0, 'must have a positive batch size'
+    if num_batches <= 0:
+        raise ValueError('must have a positive number of batches')
+    if batch_size <= 0:
+        raise ValueError('must have a positive batch size')
     
     def verbose_print(s):
         if verbose:
@@ -74,7 +77,6 @@ def train_model(clean_train, clean_test, noisy_test, num_batches=150,
     tf.set_random_seed(seed)
     np.random.seed(seed)
     
-    loss_fn = tf.losses.mean_squared_error
     device = '/gpu:0' if tfe.num_gpus() else '/cpu:0'
 
     with tf.device(device):
@@ -85,10 +87,11 @@ def train_model(clean_train, clean_test, noisy_test, num_batches=150,
         model.build((1, image_width, image_height ,1))
     
         optimizer = tf.train.AdamOptimizer()
-        masker = Masker(interpolate=True, spacing=4, radius=1)
+        loss_fn = tf.losses.mean_squared_error
         loss_history = []
     
         noise_gen = noisy_clean_generator(clean_train, batch_size, 0, 0.4)
+        masker = Masker(interpolate=True, spacing=4, radius=1)
     
         verbose_print('fitting model')
         start_time = time.time()
@@ -150,8 +153,8 @@ def plot_examples(model, clean_test, noisy_test, num_examples=15,
     
     """
     
-    assert num_examples > 0, \
-        'must have a positive number of examples'
+    if num_examples <= 0:
+        raise ValueError('must generate a positive number of examples')
     
     if randomize:
         indices = np.random.choice(clean_test.shape[0], num_examples)
