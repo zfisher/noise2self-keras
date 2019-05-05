@@ -130,7 +130,7 @@ def train_model(clean_train, clean_test, noisy_test, num_batches=150,
         masked, mask = masker(noisy_test, 0, shape=data_shape)
         test_predictions = model(tf.cast(masked, tf.float32))
         test_loss_value = loss_fn(mask * clean_test, mask * test_predictions)
-        # scores = model.evaluate(noisy_test, clean_test, 32)
+        
         print("final test loss: {:0.6f}".format(test_loss_value))
     
     return model
