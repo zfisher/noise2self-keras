@@ -18,6 +18,7 @@ image_width, image_height = 28, 28
 data_shape = (-1, image_width, image_height, 1)
 
 def get_data(dataset):
+    
     """ Prepare the mnist or fashion-mnist data to feed to the model.
     
     Args:
@@ -48,7 +49,8 @@ def get_data(dataset):
 
 def train_model(clean_train, clean_test, noisy_test, num_batches=150, 
                 batch_size=32, show_loss_plot=False, verbose=False, seed=1337):
-    """ Trains a UNet to demonstrate denoising by self-supervision (noise2self).
+    
+    """ Trains a UNet to learn denoising by self-supervision (noise2self).
     Uses matplotlib to display the results.
 
     Args:
@@ -59,6 +61,7 @@ def train_model(clean_train, clean_test, noisy_test, num_batches=150,
         batch_size (int): number of images in each batch
         show_loss_plot (bool): display a graph of loss after training
         verbose (bool): print extra information
+        seed (int): random seed for tensorflow and numpy
 
     Returns:
         The trained tensorflow model.
@@ -112,8 +115,10 @@ def train_model(clean_train, clean_test, noisy_test, num_batches=150,
             loss_display = '(loss: {:0.5f})'.format(loss_value.numpy())
             loss_history.append(loss_value.numpy())
             grads = tape.gradient(loss_value, model.trainable_variables)
-            optimizer.apply_gradients(zip(grads, model.trainable_variables),
-                                      global_step=tf.train.get_or_create_global_step())
+            optimizer.apply_gradients(
+                zip(grads, model.trainable_variables),
+                global_step=tf.train.get_or_create_global_step()
+            )
         
         end_time = time.time()
         verbose_print('fit completed in {:0.2f}s'.format(end_time - start_time))
@@ -138,6 +143,7 @@ def save_model_weights(model, output_path):
 
 def plot_examples(model, clean_test, noisy_test, num_examples=15, 
                   randomize=False, output_path=None):
+    
     """ Generates a set of examples from the trained model.
     
     Args:
@@ -164,12 +170,6 @@ def plot_examples(model, clean_test, noisy_test, num_examples=15,
     cleans = tf.reshape(clean_test[indices], data_shape)
     noisys = tf.reshape(noisy_test[indices], data_shape)
     predictions = model.predict(noisy_test[indices])
-    
-
-    masker = Masker(interpolate=True, spacing=4, radius=1)
-    examples_shape = (num_examples, image_width, image_height)
-    maskeds, masks = masker(noisys, 0, shape=examples_shape)
-
     inferences = infer(noisys, model, spacing=4)
 
     titles = ['ground truth', 'augmented with gaussian noise',
@@ -193,11 +193,11 @@ if __name__ == '__main__':
                         default=15, help='number of examples to plot')
     parser.add_argument('--show-loss-plot', dest='show_loss', 
                         action='store_true', help='display a plot with losses')
-    parser.add_argument('--weight-output-path', dest='weight_output_path', type=str, 
-                        default=None, 
+    parser.add_argument('--weight-output-path', dest='weight_output_path', 
+                        type=str, default=None, 
                         help='path to output the weights file (in hdf5 format)')
-    parser.add_argument('--example-output-path', dest='example_output_path', type=str, 
-                        default=None, 
+    parser.add_argument('--example-output-path', dest='example_output_path', 
+                        type=str, default=None, 
                         help='path to output example figure')
     parser.add_argument('-v', '--verbose', dest='verbose', 
                         action='store_true', help='verbose mode')
