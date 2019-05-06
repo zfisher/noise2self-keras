@@ -126,7 +126,7 @@ def train_model(clean_train, clean_test, noisy_test, num_batches=150,
         if show_loss_plot:
             show_plot(loss_history, 'Loss', 'Epoch', 'Mean Square Error Loss')
         
-        verbose_print('validating')
+        verbose_print('evaluating test set')
         masked, mask = masker(noisy_test, 0, shape=data_shape)
         test_predictions = model(tf.cast(masked, tf.float32))
         test_loss_value = loss_fn(mask * clean_test, mask * test_predictions)
