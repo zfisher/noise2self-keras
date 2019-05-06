@@ -49,7 +49,7 @@ class BabyUnet(tf.keras.Model):
         x = tf.concat([x, x2], axis=-1)
         x = self.block4(x)
         x = self.upsample2(x)
-        x1 = tf.concat([x, x1], axis=-1)
+        x = tf.concat([x, x1], axis=-1)
         x = self.block5(x)
         x = self.block6(x)
         return x
