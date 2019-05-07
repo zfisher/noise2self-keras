@@ -13,9 +13,9 @@ from src.utils import show_grid, show_plot, display_progress
 from src.masker import Masker, infer
 
 possible_datasets = ['mnist', 'fashion-mnist']
-image_width, image_height = 28, 28
+image_size = 28
 
-data_shape = (-1, image_width, image_height, 1)
+data_shape = (-1, image_size, image_size, 1)
 
 def get_data(dataset):
     
@@ -87,7 +87,7 @@ def train_model(clean_train, clean_test, noisy_test, num_batches=150,
         model = BabyUnet()
         model.compile(optimizer=tf.train.AdamOptimizer(0.001),
                       loss=tf.keras.losses.mean_squared_error)
-        model.build((1, image_width, image_height ,1))
+        model.build((1, image_size, image_size ,1))
     
         optimizer = tf.train.AdamOptimizer()
         loss_fn = tf.losses.mean_squared_error
