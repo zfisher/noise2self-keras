@@ -109,7 +109,7 @@ def train_model(clean_train, clean_test, noisy_test, num_batches=150,
         
             with tf.GradientTape() as tape:
                 masked, mask = masker(batch_noisy, batch, shape=data_shape)
-                batch_predictions = model(tf.cast(masked, tf.float32))
+                batch_predictions = model(tf.cast(masked, tf.float32), training=True)
                 loss_value = loss_fn(mask * batch_clean, mask * batch_predictions)
         
             loss_display = '(loss: {:0.6f})'.format(loss_value.numpy())
